@@ -92,8 +92,14 @@ export const emptyProgress = (datasetId: string): Progress => ({
 export const dayKey = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-const SETTINGS_KEY = "word-atlas:settings";
-const progressKey = (id: string) => `word-atlas:v2:${id}`;
+const DEFAULT_DATASET = "word-atlas-open";
+
+/** 当前登录用户；所有进度与设置都按用户名分命名空间，互不可见。 */
+let activeUser: string | null = null;
+
+const settingsKey = (user: string | null) => (user ? `word-atlas:u:${user}:settings` : "word-atlas:settings");
+const progressKey = (user: string | null, id: string) => (user ? `word-atlas:u:${user}:v2:${id}` : `word-atlas:v2:${id}`);
+
 
 function read<T>(key: string): T | null {
   try {
@@ -185,8 +191,8 @@ interface State {
 }
 
 let state: State = {
-  progress: emptyProgress("word-atlas-open"),
-  settings: sanitizeSettings(read(SETTINGS_KEY)),
+  progress: emptyProgress(DEFAULT_DATASET),
+  settings: { ...defaultSettings },
   saveError: false,
 };
 const listeners = new Set<() => void>();
@@ -209,9 +215,13 @@ function scheduleSave() {
 export function flush() {
   window.clearTimeout(saveTimer);
   if (!dirty) return;
+  if (!activeUser) {
+    dirty = false;
+    return;
+  }
   dirty = false;
-  const progressOk = loadedId !== state.progress.datasetId || write(progressKey(state.progress.datasetId), state.progress);
-  const ok = progressOk && write(SETTINGS_KEY, state.settings);
+  const progressOk = loadedId !== state.progress.datasetId || write(progressKey(activeUser, state.progress.datasetId), state.progress);
+  const ok = progressOk && write(settingsKey(activeUser), state.settings);
   if (ok === state.saveError) {
     state = { ...state, saveError: !ok };
     emit();
@@ -225,8 +235,8 @@ if (typeof window !== "undefined") {
   window.addEventListener("storage", (e) => {
     if (!e.newValue) return;
     try {
-      if (e.key === SETTINGS_KEY) state = { ...state, settings: sanitizeSettings(JSON.parse(e.newValue)) };
-      else if (e.key === progressKey(state.progress.datasetId))
+      if (e.key === settingsKey(activeUser)) state = { ...state, settings: sanitizeSettings(JSON.parse(e.newValue)) };
+      else if (e.key === progressKey(activeUser, state.progress.datasetId))
         state = { ...state, progress: sanitizeProgress(JSON.parse(e.newValue), state.progress.datasetId) };
       else return;
       emit();
@@ -242,9 +252,19 @@ export const store = {
     listeners.add(l);
     return () => listeners.delete(l);
   },
+  /** 切换登录用户：先把上一个用户落盘，再载入新用户的设置与当前词库进度。 */
+  setUser(username: string, datasetId: string) {
+    if (activeUser === username && loadedId === datasetId) return;
+    flush();
+    activeUser = username;
+    loadedId = null;
+    state = { ...state, settings: sanitizeSettings(read(settingsKey(username))), progress: emptyProgress(datasetId), saveError: false };
+    emit();
+    store.useDataset(datasetId);
+  },
   useDataset(datasetId: string) {
     flush();
-    state = { ...state, progress: sanitizeProgress(read(progressKey(datasetId)), datasetId) };
+    state = { ...state, progress: sanitizeProgress(read(progressKey(activeUser, datasetId)), datasetId) };
     loadedId = datasetId;
     emit();
   },

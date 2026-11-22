@@ -8,11 +8,13 @@ import { closeWord, currentLocation, go, openWord, useLocation, type Route } fro
 import { AtlasPage } from "./pages/Atlas";
 import { About } from "./pages/About";
 import { Learn } from "./pages/Learn";
+import { Login } from "./pages/Login";
 import { Me } from "./pages/Me";
 import { Onboarding } from "./pages/Onboarding";
 import { Practice } from "./pages/Practice";
 import { Today } from "./pages/Today";
 import { cue } from "./lib/sound";
+import { initAuth, useAuth } from "./store/auth";
 import { store, useStore } from "./store/store";
 import { EntryView } from "./ui/EntryView";
 import { AmbienceController, AmbiencePicker } from "./ui/Ambience";
@@ -46,8 +48,15 @@ export default function App() {
   const [open, setOpen] = useState<Atlas | null>(null);
   const [priv, setPriv] = useState<Atlas | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [boundUser, setBoundUser] = useState<string | null>(null);
   const dataset = useStore((s) => s.settings.dataset);
+  const { ready, current } = useAuth();
+  const username = current?.username ?? null;
   useTheme();
+
+  useEffect(() => {
+    void initAuth();
+  }, []);
 
   useEffect(() => {
     loadOpenAtlas().then(
@@ -59,14 +68,33 @@ export default function App() {
     );
   }, []);
 
+  // 登录后把 store 绑定到该用户，再渲染界面，避免短暂显示上一个用户的设置。
   useEffect(() => {
+    if (!username || !atlas) {
+      setBoundUser(null);
+      return;
+    }
+    store.setUser(username, atlas.id);
+    setBoundUser(username);
+  }, [username, atlas]);
+
+  useEffect(() => {
+    if (!username) return;
     const next = dataset === "private" && priv ? priv : open;
     if (next && next !== atlas) {
       store.useDataset(next.id);
       setAtlas(next);
     }
-  }, [dataset, open, priv, atlas]);
+  }, [username, dataset, open, priv, atlas]);
 
+  if (!ready)
+    return (
+      <div className="boot" aria-busy="true">
+        <Logo />
+        <span className="spinner" />
+      </div>
+    );
+  if (!current) return <Login />;
   if (error)
     return (
       <div className="boot">
@@ -77,7 +105,7 @@ export default function App() {
         </button>
       </div>
     );
-  if (!atlas)
+  if (!atlas || boundUser !== username)
     return (
       <div className="boot" aria-busy="true">
         <Logo />

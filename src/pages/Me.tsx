@@ -1,8 +1,10 @@
 import { Download, RotateCcw, Upload } from "lucide-react";
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useAtlas } from "../atlas/context";
+import { signOut, useAuth } from "../store/auth";
 import { isMastered } from "../store/srs";
-import { dayKey, exportBackup, importBackup, resetProgress, store, useStore, type Settings } from "../store/store";
+import { dayKey, exportBackup, flush, importBackup, resetProgress, store, useStore, type Settings } from "../store/store";
+import { CreateUserForm, PasswordForm, RenameForm } from "../ui/AccountForms";
 import { toast } from "../ui/Toast";
 import { streakOf } from "./Today";
 
@@ -12,6 +14,8 @@ export function Me({ privateAvailable }: { privateAvailable: boolean }) {
   const settings = useStore((s) => s.settings);
   const saveError = useStore((s) => s.saveError);
   const file = useRef<HTMLInputElement>(null);
+  const { current, users } = useAuth();
+  const [editing, setEditing] = useState<"none" | "nickname" | "password" | "create">("none");
 
   const stats = useMemo(() => {
     const cards = Object.values(progress.cards);
@@ -88,6 +92,45 @@ export function Me({ privateAvailable }: { privateAvailable: boolean }) {
       </section>
 
       <div className="me-grid">
+        <section className="panel account">
+          <h3 className="eyebrow">账号</h3>
+          <div className="account-head">
+            <span className="avatar avatar-lg">{current?.nickname.slice(0, 1)}</span>
+            <div className="account-id">
+              <b>{current?.nickname}</b>
+              <small>@{current?.username} · 用户名不可修改</small>
+            </div>
+          </div>
+          <div className="account-actions">
+            <button className="btn btn-ghost" onClick={() => setEditing(editing === "nickname" ? "none" : "nickname")}>
+              修改昵称
+            </button>
+            <button className="btn btn-ghost" onClick={() => setEditing(editing === "password" ? "none" : "password")}>
+              修改密码
+            </button>
+            <button className="btn btn-ghost" onClick={() => setEditing(editing === "create" ? "none" : "create")}>
+              新建用户
+            </button>
+            <button
+              className="btn btn-ghost btn-danger"
+              onClick={() => {
+                flush();
+                signOut();
+              }}
+            >
+              退出登录
+            </button>
+          </div>
+          {editing !== "none" && (
+            <div className="account-editor">
+              {editing === "nickname" && <RenameForm onDone={(m) => { toast(m); setEditing("none"); }} />}
+              {editing === "password" && <PasswordForm onDone={(m) => { toast(m); setEditing("none"); }} />}
+              {editing === "create" && <CreateUserForm onDone={(m) => { toast(m); setEditing("none"); }} />}
+            </div>
+          )}
+          <p className="muted">本机共 {users.length} 个账号。各自有独立的学习曲线、词库设置和宠物；换账号请先退出登录。</p>
+        </section>
+
         <section className="panel">
           <h3 className="eyebrow">过去 20 周</h3>
           <Heatmap days={progress.days} />
@@ -181,7 +224,7 @@ export function Me({ privateAvailable }: { privateAvailable: boolean }) {
 
         <section className="panel">
           <h3 className="eyebrow">数据</h3>
-          <p className="muted">进度只存在这台设备的浏览器里：没有账号，没有服务器。换设备时，导出备份再导入即可。</p>
+          <p className="muted">进度只存在这台设备的浏览器里，并按账号分开保存：没有服务器同步。换设备时，导出备份再导入即可。</p>
           {saveError && <p className="warn-text">浏览器拒绝保存（可能是隐私模式或空间已满）。请尽快导出备份。</p>}
           <div className="data-actions">
             <button className="btn btn-ghost" onClick={download}>

@@ -4120,3 +4120,190 @@ a:hover .mark-needle,
 .streak-panel .mini-stats div:first-child dd {
   color: var(--ochre);
 }
+
+/* ---------- 账号与登录 ---------- */
+
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--terra-soft);
+  color: var(--terra-ink);
+  font: 700 15px/1 var(--serif);
+}
+.avatar-lg {
+  width: 46px;
+  height: 46px;
+  font-size: 20px;
+}
+
+.login {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 32px 20px;
+  background:
+    radial-gradient(600px 340px at 50% -10%, var(--glow), transparent 70%),
+    radial-gradient(420px 260px at 85% 105%, var(--sky-soft), transparent 70%),
+    var(--paper);
+}
+.login-card {
+  width: min(420px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 32px 28px 26px;
+  border-radius: var(--r-lg);
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-lg);
+}
+.login-card > .logo {
+  justify-self: center;
+}
+.login-eyebrow {
+  margin: 0;
+  text-align: center;
+  font-size: 12px;
+}
+.login-title {
+  margin: 0;
+  text-align: center;
+  font-family: var(--serif);
+  font-size: clamp(24px, 5.4vw, 30px);
+  line-height: 1.2;
+}
+.login-sub {
+  margin: 0 0 4px;
+  text-align: center;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.login-users {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.login-user {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border-radius: var(--r);
+  border: 1px solid var(--line);
+  background: var(--card-2);
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s var(--spring);
+}
+.login-user:hover {
+  transform: translateY(-1px);
+}
+.login-user.is-on {
+  border-color: var(--terra);
+  box-shadow: 0 0 0 3px var(--terra-soft);
+}
+.login-user b {
+  font-size: 15px;
+}
+.login-user small {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.login-hint {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--ink-3);
+}
+.login-switch {
+  justify-self: center;
+  font-size: 13.5px;
+}
+
+.account-form {
+  display: grid;
+  gap: 10px;
+}
+.field-col {
+  display: grid;
+  gap: 6px;
+}
+.field-col b {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.input {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line-strong);
+  background: var(--card-2);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+}
+.input::placeholder {
+  color: var(--ink-4);
+}
+.input:focus {
+  outline: none;
+  border-color: var(--terra);
+  box-shadow: 0 0 0 3px var(--terra-soft);
+}
+.form-error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--terra-ink);
+}
+.form-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--sage-ink);
+}
+.account-form .btn {
+  justify-self: start;
+}
+.account-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.account-id {
+  display: grid;
+  gap: 2px;
+}
+.account-id b {
+  font-size: 17px;
+}
+.account-id small {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.account-actions .btn {
+  height: 38px;
+  padding: 0 14px;
+  font-size: 13.5px;
+}
+.account-editor {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: var(--r);
+  border: 1px solid var(--line);
+  background: var(--card-2);
+}
+.account-editor .btn {
+  justify-self: start;
+}
+.account .muted {
+  margin-top: 12px;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
