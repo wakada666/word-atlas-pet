@@ -2,10 +2,12 @@ import { ArrowRight, Heart, Lock, Sparkles, Utensils } from "lucide-react";
 import { useRef, useState } from "react";
 import { burst } from "../lib/burst";
 import { go } from "../lib/router";
+import { store } from "../store/store";
 import { Sheet } from "../ui/Sheet";
 import { DAILY_TARGET, fedToday, levelInfo, petMood, type PetState } from "./engine";
 import { PET_FORMS } from "./forms";
-import { PetSprite } from "./PetSprite";
+import { PetAvatar } from "./PetAvatar";
+import { PET_SKINS, skinById, skinSrc } from "./skins";
 
 const MOOD_LABEL = { happy: "精神满满", ok: "还不错", hungry: "肚子有点饿了" };
 
@@ -31,11 +33,13 @@ export function PetSheet({ pet, open, onClose }: { pet: PetState; open: boolean;
           {pet.name}
           <span className="chip">Lv.{pet.level}</span>
         </h2>
-        <p className={`pet-mood mood-${mood}`}>{MOOD_LABEL[mood]}</p>
+        <p className={`pet-mood mood-${mood}`}>
+          {skinById(pet.skin).label} · {MOOD_LABEL[mood]}
+        </p>
       </div>
 
       <div ref={stage} className={`pet-stage ${petted ? "is-petted" : ""}`}>
-        <PetSprite level={pet.level} mood={mood} />
+        <PetAvatar pet={pet} mood={mood} size={168} />
       </div>
 
       <div className="pet-meters">
@@ -54,6 +58,20 @@ export function PetSheet({ pet, open, onClose }: { pet: PetState; open: boolean;
           <dd>{Math.max(0, info.need - info.into)} XP</dd>
         </div>
       </dl>
+
+      <section className="pet-skins">
+        <h3 className="eyebrow">形象</h3>
+        <div className="pet-skin-grid">
+          {PET_SKINS.map((s) => (
+            <button key={s.id} className={pet.skin === s.id ? "is-on" : ""} onClick={() => store.petSkin(s.id)} aria-pressed={pet.skin === s.id}>
+              <img src={skinSrc(s.id)} alt={s.label} />
+              <b>{s.label}</b>
+              <small>{s.note}</small>
+            </button>
+          ))}
+        </div>
+        <p className="muted">形象只是外观，不影响经验、饱腹和进化。</p>
+      </section>
 
       <section className="pet-evo">
         <h3 className="eyebrow">进化</h3>

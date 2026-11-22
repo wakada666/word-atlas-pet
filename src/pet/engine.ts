@@ -1,4 +1,5 @@
 import { dayKey } from "../lib/day";
+import { DEFAULT_SKIN, isSkin } from "./skins";
 
 /** 每天 10 个新词就把宠物喂饱。 */
 export const DAILY_TARGET = 10;
@@ -27,6 +28,8 @@ export interface PetState {
   lastTick: string;
   totalWords: number;
   form: string;
+  /** 当前外观，只影响形象，不影响数值。 */
+  skin: string;
   lastFed: number;
 }
 
@@ -59,6 +62,7 @@ export function createPet(now = Date.now()): PetState {
     lastTick: dayKey(new Date(now)),
     totalWords: 0,
     form: "puppy",
+    skin: DEFAULT_SKIN,
     lastFed: 0,
   };
 }
@@ -153,6 +157,7 @@ export function sanitizePet(v: unknown, now = Date.now()): PetState {
     lastTick: typeof v.lastTick === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v.lastTick) ? v.lastTick : base.lastTick,
     totalWords: num(v.totalWords, 0) ? Math.floor(v.totalWords) : 0,
     form: typeof v.form === "string" ? v.form : "puppy",
+    skin: typeof v.skin === "string" && isSkin(v.skin) ? v.skin : DEFAULT_SKIN,
     lastFed: num(v.lastFed, 0) ? v.lastFed : 0,
   };
   return tickPet(pet, now);

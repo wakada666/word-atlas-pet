@@ -3,8 +3,8 @@ import { useLocation } from "../lib/router";
 import { store, useStore } from "../store/store";
 import { toast } from "../ui/Toast";
 import { DAILY_TARGET, fedToday, petMood } from "./engine";
+import { PetAvatar } from "./PetAvatar";
 import { PetSheet } from "./PetSheet";
-import { PetSprite } from "./PetSprite";
 
 /** 悬浮在页面上的宠物伙伴：会小范围走动，点击打开互动面板。 */
 export function PetCompanion() {
@@ -48,7 +48,7 @@ export function PetCompanion() {
         <span className="pet-bubble" role="status">
           {bubble}
         </span>
-        <PetSprite level={pet.level} mood={mood} />
+        <PetAvatar pet={pet} mood={mood} size={96} />
       </button>
       <PetSheet pet={pet} open={open} onClose={() => setOpen(false)} />
     </>

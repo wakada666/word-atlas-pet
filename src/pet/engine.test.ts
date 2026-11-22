@@ -73,4 +73,7 @@ test("存档清洗：坏字段回落到默认，等级由经验重算", () => {
   assert.equal(pet.level, 3);
   assert.equal(pet.satiety, 60);
   assert.deepEqual(pet.fed, { "2026-11-22": 3 });
+  assert.equal(pet.skin, "shiba");
+  assert.equal(sanitizePet({ version: 1, skin: "corgi" }, at(22)).skin, "corgi");
+  assert.equal(sanitizePet({ version: 1, skin: "dragon" }, at(22)).skin, "shiba");
 });

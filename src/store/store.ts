@@ -3,6 +3,7 @@ import type { DatasetKey } from "../atlas/datasets";
 import type { Accent } from "../atlas/types";
 import { dayKey } from "../lib/day";
 import { createPet, feedPet, sanitizePet, tickPet, type FeedKind, type PetState } from "../pet/engine";
+import { isSkin } from "../pet/skins";
 import type { CardState, Grade } from "./srs";
 
 export type QuizKind = "meaning" | "picture" | "listen" | "spell";
@@ -305,6 +306,13 @@ export const store = {
     const next = tickPet(state.pet);
     if (next === state.pet) return;
     state = { ...state, pet: next };
+    emit();
+    scheduleSave();
+  },
+  /** 切换宠物外观，只改形象。 */
+  petSkin(skin: string) {
+    if (!isSkin(skin) || skin === state.pet.skin) return;
+    state = { ...state, pet: { ...state.pet, skin } };
     emit();
     scheduleSave();
   },
