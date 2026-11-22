@@ -99,12 +99,22 @@ export function AtlasPage({
         <div>
           <p className="eyebrow">图鉴 · {atlas.count.toLocaleString()} 词</p>
           <h1 className="display">
-            每个词，
-            <br className="br-sm" />
-            都有一幅画。
+            {atlas.illustrated === atlas.count ? (
+              <>
+                每个词，
+                <br className="br-sm" />
+                都有一幅画。
+              </>
+            ) : (
+              <>
+                每个词，
+                <br className="br-sm" />
+                都值得记住。
+              </>
+            )}
           </h1>
           <p className="lede">
-            {atlas.examples.toLocaleString()} 条原创例句 · 英美发音 · 按难度和 {atlas.topics.length} 个雅思话题整理
+            {atlas.examples.toLocaleString()} 条例句 · 英美发音 · 按难度和 {atlas.topics.length} 个{atlas.id === "word-atlas-open" ? "雅思" : ""}话题整理
           </p>
         </div>
         <label className="search">

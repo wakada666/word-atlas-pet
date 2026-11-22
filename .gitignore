@@ -5,6 +5,12 @@ dist/
 public/atlas/img/
 public/atlas/thumb/
 public/atlas/audio/
+public/atlas-primary/img/
+public/atlas-primary/thumb/
+public/atlas-primary/audio/
+public/atlas-junior/img/
+public/atlas-junior/thumb/
+public/atlas-junior/audio/
 .local/
 .env
 .env.*

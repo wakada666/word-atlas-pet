@@ -1,7 +1,8 @@
 import { BookOpen, ChevronLeft, ChevronRight, Compass, Github, Keyboard, Moon, Search, Sun, User } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { AtlasContext, useAtlas, useEntry } from "./atlas/context";
-import { loadOpenAtlas, loadPrivateAtlas } from "./atlas/data";
+import { datasetDir, type DatasetKey } from "./atlas/datasets";
+import { loadAtlas, loadPrivateAtlas } from "./atlas/data";
 import type { Atlas } from "./atlas/types";
 import { REPO_URL } from "./config";
 import { closeWord, currentLocation, go, openWord, useLocation, type Route } from "./lib/router";
@@ -44,9 +45,7 @@ function useTheme() {
 }
 
 export default function App() {
-  const [atlas, setAtlas] = useState<Atlas | null>(null);
-  const [open, setOpen] = useState<Atlas | null>(null);
-  const [priv, setPriv] = useState<Atlas | null>(null);
+  const [atlases, setAtlases] = useState<Partial<Record<DatasetKey, Atlas>>>({});
   const [error, setError] = useState<string | null>(null);
   const [boundUser, setBoundUser] = useState<string | null>(null);
   const dataset = useStore((s) => s.settings.dataset);
@@ -54,19 +53,37 @@ export default function App() {
   const username = current?.username ?? null;
   useTheme();
 
+  const atlas = dataset === "private" ? (atlases.private ?? atlases.open ?? null) : (atlases[dataset] ?? null);
+
   useEffect(() => {
     void initAuth();
   }, []);
 
   useEffect(() => {
-    loadOpenAtlas().then(
+    loadAtlas("atlas").then(
       (a) => {
-        setOpen(a);
-        if (import.meta.env.DEV) loadPrivateAtlas(a).then(setPriv, () => null);
+        setAtlases((m) => ({ ...m, open: a }));
+        if (import.meta.env.DEV)
+          loadPrivateAtlas(a).then(
+            (p) => {
+              if (p) setAtlases((m) => ({ ...m, private: p }));
+            },
+            () => null,
+          );
       },
       (e: Error) => setError(e.message),
     );
   }, []);
+
+  // Curriculum datasets are fetched on demand; loadAtlas caches per directory.
+  useEffect(() => {
+    if (dataset !== "primary" && dataset !== "junior") return;
+    if (atlases[dataset]) return;
+    loadAtlas(datasetDir(dataset)).then(
+      (a) => setAtlases((m) => ({ ...m, [dataset]: a })),
+      (e: Error) => setError(e.message),
+    );
+  }, [dataset, atlases]);
 
   // 登录后把 store 绑定到该用户，再渲染界面，避免短暂显示上一个用户的设置。
   useEffect(() => {
@@ -77,15 +94,6 @@ export default function App() {
     store.setUser(username, atlas.id);
     setBoundUser(username);
   }, [username, atlas]);
-
-  useEffect(() => {
-    if (!username) return;
-    const next = dataset === "private" && priv ? priv : open;
-    if (next && next !== atlas) {
-      store.useDataset(next.id);
-      setAtlas(next);
-    }
-  }, [username, dataset, open, priv, atlas]);
 
   if (!ready)
     return (
@@ -114,7 +122,7 @@ export default function App() {
     );
   return (
     <AtlasContext.Provider value={atlas}>
-      <Shell privateAvailable={!!priv} />
+      <Shell privateAvailable={!!atlases.private} />
     </AtlasContext.Provider>
   );
 }

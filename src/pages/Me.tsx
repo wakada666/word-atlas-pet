@@ -1,6 +1,7 @@
 import { Download, RotateCcw, Upload } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { useAtlas } from "../atlas/context";
+import { DATASETS } from "../atlas/datasets";
 import { signOut, useAuth } from "../store/auth";
 import { isMastered } from "../store/srs";
 import { dayKey, exportBackup, flush, importBackup, resetProgress, store, useStore, type Settings } from "../store/store";
@@ -208,18 +209,20 @@ export function Me({ privateAvailable }: { privateAvailable: boolean }) {
           <Toggle label="界面音效" on={settings.sfx} set={(v) => set({ sfx: v })} />
           <Toggle label="开屏动画（每天一次）" on={settings.splash} set={(v) => set({ splash: v })} />
           <Toggle label="复习时加入拼写题" on={settings.spell} set={(v) => set({ spell: v })} />
-          {privateAvailable && (
-            <Field label="词库" hint="私人词库只在本机开发服务器中可用，不会被打包发布。">
-              <div className="segmented">
-                <button className={settings.dataset === "open" ? "is-on" : ""} onClick={() => set({ dataset: "open" })}>
-                  开放图鉴
+          <Field label="词库" hint="小学、初中词库按课标词表整理；每个词库单独记录进度。">
+            <div className="segmented">
+              {DATASETS.map((d) => (
+                <button key={d.key} className={settings.dataset === d.key ? "is-on" : ""} onClick={() => set({ dataset: d.key })}>
+                  {d.label}
                 </button>
+              ))}
+              {privateAvailable && (
                 <button className={settings.dataset === "private" ? "is-on" : ""} onClick={() => set({ dataset: "private" })}>
                   私人 8000
                 </button>
-              </div>
-            </Field>
-          )}
+              )}
+            </div>
+          </Field>
         </section>
 
         <section className="panel">

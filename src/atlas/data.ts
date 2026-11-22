@@ -2,7 +2,6 @@ import type { Atlas, Entry, IndexRow, WordRef } from "./types";
 import { MEDIA } from "./types";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const url = (p: string) => `${BASE}/atlas/${p}`;
 
 interface IndexFile {
   id: string;
@@ -16,7 +15,25 @@ interface IndexFile {
   words: IndexRow[];
 }
 
-export async function loadOpenAtlas(): Promise<Atlas> {
+const cache = new Map<string, Promise<Atlas>>();
+
+/** Loads a chunked dataset from `public/<dir>/`. Results are cached per directory. */
+export function loadAtlas(dir = "atlas"): Promise<Atlas> {
+  let p = cache.get(dir);
+  if (!p) {
+    p = fetchAtlas(dir).catch((e) => {
+      cache.delete(dir);
+      throw e;
+    });
+    cache.set(dir, p);
+  }
+  return p;
+}
+
+export const loadOpenAtlas = () => loadAtlas("atlas");
+
+async function fetchAtlas(dir: string): Promise<Atlas> {
+  const url = (p: string) => `${BASE}/${dir}/${p}`;
   const res = await fetch(url("index.json"));
   if (!res.ok) throw new Error(`词库索引加载失败（${res.status}）`);
   const idx = (await res.json()) as IndexFile;

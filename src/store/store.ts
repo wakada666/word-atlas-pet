@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import type { DatasetKey } from "../atlas/datasets";
 import type { Accent } from "../atlas/types";
 import type { CardState, Grade } from "./srs";
 
@@ -56,7 +57,7 @@ export interface Settings {
   spell: boolean;
   startLevel: number;
   onboarded: boolean;
-  dataset: "open" | "private";
+  dataset: DatasetKey;
   ambience: "off" | "stars" | "rain" | "sea" | "forest" | "fire" | "voyage" | "cafe";
   ambienceVolume: number;
   splash: boolean;
@@ -175,7 +176,7 @@ export function sanitizeSettings(v: unknown): Settings {
   if (typeof v.spell === "boolean") s.spell = v.spell;
   if (num(v.startLevel, 0, 5)) s.startLevel = Math.round(v.startLevel as number);
   if (typeof v.onboarded === "boolean") s.onboarded = v.onboarded;
-  if (v.dataset === "open" || v.dataset === "private") s.dataset = v.dataset;
+  if (v.dataset === "open" || v.dataset === "primary" || v.dataset === "junior" || v.dataset === "private") s.dataset = v.dataset;
   if (["off", "stars", "rain", "sea", "forest", "fire", "voyage", "cafe"].includes(v.ambience as string)) s.ambience = v.ambience as Settings["ambience"];
   if (num(v.ambienceVolume, 0, 1)) s.ambienceVolume = v.ambienceVolume as number;
   if (typeof v.splash === "boolean") s.splash = v.splash;
