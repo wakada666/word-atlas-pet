@@ -117,12 +117,16 @@ export function gradeFor(kind: QuizKind, correct: boolean, ms: number, hinted: b
 
 /** Apply an answer. Only the first attempt for a word in a session updates memory and stats. */
 export function answer(atlas: Atlas, step: Step & { kind: QuizKind }, correct: boolean, grade: Grade, value: string) {
-  const { settings } = store.get();
+  const { settings, progress } = store.get();
+  const active = progress.session;
+  if (!active) return;
+  const first = !(step.id in active.graded) && !step.retry;
+  // 新词喂一口，复习只给少量经验；重复作答不再喂食。
+  if (first) store.petWord(active.newIds.includes(step.id) ? "new" : "review");
   store.progress((p) => {
     const sess = p.session;
     if (!sess) return p;
     let next: Progress = { ...p, session: { ...sess, pending: { correct, value } } };
-    const first = !(step.id in sess.graded) && !step.retry;
     if (first) {
       next = {
         ...next,

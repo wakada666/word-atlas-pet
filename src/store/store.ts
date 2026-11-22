@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from "react";
 import type { DatasetKey } from "../atlas/datasets";
 import type { Accent } from "../atlas/types";
+import { dayKey } from "../lib/day";
+import { createPet, feedPet, sanitizePet, tickPet, type FeedKind, type PetState } from "../pet/engine";
 import type { CardState, Grade } from "./srs";
 
 export type QuizKind = "meaning" | "picture" | "listen" | "spell";
@@ -90,8 +92,7 @@ export const emptyProgress = (datasetId: string): Progress => ({
   mistakes: [],
 });
 
-export const dayKey = (d = new Date()) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+export { dayKey };
 
 const DEFAULT_DATASET = "word-atlas-open";
 
@@ -100,6 +101,7 @@ let activeUser: string | null = null;
 
 const settingsKey = (user: string | null) => (user ? `word-atlas:u:${user}:settings` : "word-atlas:settings");
 const progressKey = (user: string | null, id: string) => (user ? `word-atlas:u:${user}:v2:${id}` : `word-atlas:v2:${id}`);
+const petKey = (user: string | null) => (user ? `word-atlas:u:${user}:pet` : "word-atlas:pet");
 
 
 function read<T>(key: string): T | null {
@@ -188,12 +190,14 @@ export function sanitizeSettings(v: unknown): Settings {
 interface State {
   progress: Progress;
   settings: Settings;
+  pet: PetState;
   saveError: boolean;
 }
 
 let state: State = {
   progress: emptyProgress(DEFAULT_DATASET),
   settings: { ...defaultSettings },
+  pet: createPet(),
   saveError: false,
 };
 const listeners = new Set<() => void>();
@@ -222,7 +226,8 @@ export function flush() {
   }
   dirty = false;
   const progressOk = loadedId !== state.progress.datasetId || write(progressKey(activeUser, state.progress.datasetId), state.progress);
-  const ok = progressOk && write(settingsKey(activeUser), state.settings);
+  const petOk = write(petKey(activeUser), state.pet);
+  const ok = progressOk && petOk && write(settingsKey(activeUser), state.settings);
   if (ok === state.saveError) {
     state = { ...state, saveError: !ok };
     emit();
@@ -239,6 +244,7 @@ if (typeof window !== "undefined") {
       if (e.key === settingsKey(activeUser)) state = { ...state, settings: sanitizeSettings(JSON.parse(e.newValue)) };
       else if (e.key === progressKey(activeUser, state.progress.datasetId))
         state = { ...state, progress: sanitizeProgress(JSON.parse(e.newValue), state.progress.datasetId) };
+      else if (e.key === petKey(activeUser)) state = { ...state, pet: sanitizePet(JSON.parse(e.newValue)) };
       else return;
       emit();
     } catch {
@@ -259,9 +265,16 @@ export const store = {
     flush();
     activeUser = username;
     loadedId = null;
-    state = { ...state, settings: sanitizeSettings(read(settingsKey(username))), progress: emptyProgress(datasetId), saveError: false };
+    state = {
+      ...state,
+      settings: sanitizeSettings(read(settingsKey(username))),
+      progress: emptyProgress(datasetId),
+      pet: sanitizePet(read(petKey(username))),
+      saveError: false,
+    };
     emit();
     store.useDataset(datasetId);
+    scheduleSave();
   },
   useDataset(datasetId: string) {
     flush();
@@ -276,6 +289,22 @@ export const store = {
   },
   settings(patch: Partial<Settings>) {
     state = { ...state, settings: { ...state.settings, ...patch } };
+    emit();
+    scheduleSave();
+  },
+  /** 学完一个词后喂宠物；返回是否升级，供界面提示。 */
+  petWord(kind: FeedKind) {
+    const res = feedPet(state.pet, kind);
+    state = { ...state, pet: res.pet };
+    emit();
+    scheduleSave();
+    return res;
+  },
+  /** 跨天时结算饥饿衰减。 */
+  petTick() {
+    const next = tickPet(state.pet);
+    if (next === state.pet) return;
+    state = { ...state, pet: next };
     emit();
     scheduleSave();
   },
@@ -308,8 +337,8 @@ export function toggleBookmark(id: string) {
 
 export function exportBackup() {
   flush();
-  const { progress, settings } = state;
-  return JSON.stringify({ app: "word-atlas", version: 2, exported: new Date().toISOString(), progress: { ...progress, session: null }, settings }, null, 1);
+  const { progress, settings, pet } = state;
+  return JSON.stringify({ app: "word-atlas", version: 2, exported: new Date().toISOString(), progress: { ...progress, session: null }, settings, pet }, null, 1);
 }
 
 function markDirty() {
@@ -328,7 +357,8 @@ export function importBackup(text: string): { ok: true; cards: number } | { ok: 
   const id = state.progress.datasetId;
   if (data.progress.datasetId !== id) return { ok: false, error: "备份来自另一个词库，请先切换到对应词库。" };
   const progress = sanitizeProgress({ ...data.progress, session: null }, id);
-  state = { ...state, progress, settings: { ...sanitizeSettings(data.settings), onboarded: true } };
+  const pet = isObj(data.pet) ? sanitizePet(data.pet) : state.pet;
+  state = { ...state, progress, settings: { ...sanitizeSettings(data.settings), onboarded: true }, pet };
   emit();
   markDirty();
   flush();

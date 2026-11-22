@@ -15,6 +15,7 @@ import { Onboarding } from "./pages/Onboarding";
 import { Practice } from "./pages/Practice";
 import { Today } from "./pages/Today";
 import { cue } from "./lib/sound";
+import { PetCompanion } from "./pet/PetCompanion";
 import { initAuth, useAuth } from "./store/auth";
 import { store, useStore } from "./store/store";
 import { EntryView } from "./ui/EntryView";
@@ -222,6 +223,7 @@ function Shell({ privateAvailable }: { privateAvailable: boolean }) {
       )}
 
       <WordSheet id={word} />
+      {onboarded && <PetCompanion />}
       <Palette open={palette} onClose={() => setPalette(false)} />
       {!onboarded && route.page !== "about" && !splash && <Onboarding />}
       {splash && <Splash onDone={() => setSplash(false)} />}
