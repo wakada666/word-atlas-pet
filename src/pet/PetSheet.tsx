@@ -1,28 +1,34 @@
 import { ArrowRight, Heart, Lock, Sparkles, Utensils } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { burst } from "../lib/burst";
 import { go } from "../lib/router";
 import { store } from "../store/store";
 import { Sheet } from "../ui/Sheet";
 import { DAILY_TARGET, fedToday, levelInfo, petMood, type PetState } from "./engine";
 import { PET_FORMS } from "./forms";
-import { PetAvatar } from "./PetAvatar";
-import { PET_SKINS, skinById, skinSrc } from "./skins";
+import { PET_SKINS, skinById } from "./skins";
+import { SpritePet } from "./SpritePet";
+import type { PetAction } from "./sprite";
 
 const MOOD_LABEL = { happy: "精神满满", ok: "还不错", hungry: "肚子有点饿了" };
 
 export function PetSheet({ pet, open, onClose }: { pet: PetState; open: boolean; onClose: () => void }) {
   const stage = useRef<HTMLDivElement>(null);
-  const [petted, setPetted] = useState(false);
+  const timer = useRef(0);
+  const [action, setAction] = useState<PetAction>("idle");
   const info = levelInfo(pet.xp);
   const fed = fedToday(pet);
   const mood = petMood(pet.satiety);
 
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+  useEffect(() => setAction("idle"), [pet.skin]);
+
   const petIt = () => {
     const r = stage.current?.getBoundingClientRect();
     if (r) burst(r.left + r.width / 2, r.top + r.height / 2, 16);
-    setPetted(true);
-    window.setTimeout(() => setPetted(false), 700);
+    setAction("happy");
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setAction("idle"), 2400);
   };
 
   return (
@@ -38,8 +44,8 @@ export function PetSheet({ pet, open, onClose }: { pet: PetState; open: boolean;
         </p>
       </div>
 
-      <div ref={stage} className={`pet-stage ${petted ? "is-petted" : ""}`}>
-        <PetAvatar pet={pet} mood={mood} size={168} />
+      <div ref={stage} className={`pet-stage ${action === "happy" ? "is-petted" : ""}`}>
+        <SpritePet skin={pet.skin} action={action} size={176} />
       </div>
 
       <div className="pet-meters">
@@ -64,7 +70,9 @@ export function PetSheet({ pet, open, onClose }: { pet: PetState; open: boolean;
         <div className="pet-skin-grid">
           {PET_SKINS.map((s) => (
             <button key={s.id} className={pet.skin === s.id ? "is-on" : ""} onClick={() => store.petSkin(s.id)} aria-pressed={pet.skin === s.id}>
-              <img src={skinSrc(s.id)} alt={s.label} />
+              <span className="pet-skin-thumb">
+                <SpritePet skin={s.id} action="idle" size={54} playing={false} />
+              </span>
               <b>{s.label}</b>
               <small>{s.note}</small>
             </button>

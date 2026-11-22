@@ -5,17 +5,19 @@ export interface PetSkin {
 }
 
 export const PET_SKINS: PetSkin[] = [
-  { id: "shiba", label: "柴犬", note: "元气橘" },
-  { id: "rural", label: "中华田园犬", note: "温顺土狗" },
-  { id: "samoyed", label: "萨摩耶", note: "微笑天使" },
-  { id: "corgi", label: "柯基", note: "小短腿" },
-  { id: "border", label: "边牧", note: "黑白聪明" },
+  { id: "golden", label: "金毛", note: "温顺大暖男" },
+  { id: "akita", label: "秋田", note: "忠犬系" },
+  { id: "dane", label: "大丹", note: "高个子" },
+  { id: "schnauzer", label: "雪纳瑞", note: "小老头" },
+  { id: "bernard", label: "圣伯纳", note: "毛茸茸" },
+  { id: "husky", label: "哈士奇", note: "蓝眼睛" },
 ];
 
-export const DEFAULT_SKIN = "shiba";
+export const DEFAULT_SKIN = "golden";
 
 export const isSkin = (id: string) => PET_SKINS.some((s) => s.id === id);
 export const skinById = (id: string) => PET_SKINS.find((s) => s.id === id) ?? PET_SKINS[0];
 
 const BASE = (import.meta.env?.BASE_URL ?? "/").replace(/\/$/, "");
-export const skinSrc = (id: string) => `${BASE}/pet/${skinById(id).id}.jpg`;
+/** 每种狗的动作图是 100×100 的横向帧条。 */
+export const spriteSrc = (skin: string, file: string) => `${BASE}/pet/dogs/${skinById(skin).id}/${file}.png`;
