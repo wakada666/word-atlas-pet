@@ -1,0 +1,16 @@
+node_modules/
+dist/
+
+# 媒体资源（约 620MB）不进仓库，仅本地保留；来源 designfuchen/word-atlas（CC BY 4.0）
+public/atlas/img/
+public/atlas/thumb/
+public/atlas/audio/
+.local/
+.env
+.env.*
+!.env.example
+output/
+*.zip
+.DS_Store
+.playwright-cli/
+*.tsbuildinfo
