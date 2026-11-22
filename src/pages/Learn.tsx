@@ -123,7 +123,7 @@ function Intro({ step }: { step: Step }) {
 
 const KIND_LABEL: Record<QuizKind, string> = {
   meaning: "它是什么意思？",
-  picture: "看图，补全这句话",
+  picture: "补全这句话",
   listen: "听，是哪个词？",
   spell: "拼出这个词",
 };
@@ -194,7 +194,6 @@ function Quiz({ step, session }: { step: Step & { kind: QuizKind }; session: Act
         )}
         {step.kind === "picture" && (
           <div className="prompt-picture">
-            <Illustration src={atlas.img(entry)} word={entry.w} topic={ref.topic} eager />
             <p className="cloze" lang="en">
               {sentence ? (
                 <>
