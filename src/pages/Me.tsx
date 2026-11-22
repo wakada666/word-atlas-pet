@@ -133,6 +133,38 @@ export function Me({ privateAvailable }: { privateAvailable: boolean }) {
         </section>
 
         <section className="panel">
+          <h3 className="eyebrow">词库</h3>
+          <p className="muted">选择要学的词库。每个词库的学习记录、记忆曲线和宠物互不影响。</p>
+          <div className="dataset-list">
+            {DATASETS.map((d) => {
+              const on = settings.dataset === d.key;
+              return (
+                <button key={d.key} className={`dataset-item ${on ? "is-on" : ""}`} onClick={() => set({ dataset: d.key })} aria-pressed={on}>
+                  <span>
+                    <b>{d.label}</b>
+                    <small>{d.hint}</small>
+                  </span>
+                  <em>{on ? `当前 · ${atlas.count.toLocaleString()} 词` : "切换"}</em>
+                </button>
+              );
+            })}
+            {privateAvailable && (
+              <button
+                className={`dataset-item ${settings.dataset === "private" ? "is-on" : ""}`}
+                onClick={() => set({ dataset: "private" })}
+                aria-pressed={settings.dataset === "private"}
+              >
+                <span>
+                  <b>私人 8000</b>
+                  <small>仅本机开发服务器可用</small>
+                </span>
+                <em>{settings.dataset === "private" ? `当前 · ${atlas.count.toLocaleString()} 词` : "切换"}</em>
+              </button>
+            )}
+          </div>
+        </section>
+
+        <section className="panel">
           <h3 className="eyebrow">过去 20 周</h3>
           <Heatmap days={progress.days} />
           <p className="muted">一格是一天，颜色越深，那天答得越多。「长期记住」指记忆稳定度超过 21 天。</p>
@@ -209,20 +241,6 @@ export function Me({ privateAvailable }: { privateAvailable: boolean }) {
           <Toggle label="界面音效" on={settings.sfx} set={(v) => set({ sfx: v })} />
           <Toggle label="开屏动画（每天一次）" on={settings.splash} set={(v) => set({ splash: v })} />
           <Toggle label="复习时加入拼写题" on={settings.spell} set={(v) => set({ spell: v })} />
-          <Field label="词库" hint="小学、初中词库按课标词表整理；每个词库单独记录进度。">
-            <div className="segmented">
-              {DATASETS.map((d) => (
-                <button key={d.key} className={settings.dataset === d.key ? "is-on" : ""} onClick={() => set({ dataset: d.key })}>
-                  {d.label}
-                </button>
-              ))}
-              {privateAvailable && (
-                <button className={settings.dataset === "private" ? "is-on" : ""} onClick={() => set({ dataset: "private" })}>
-                  私人 8000
-                </button>
-              )}
-            </div>
-          </Field>
         </section>
 
         <section className="panel">

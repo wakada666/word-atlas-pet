@@ -3037,6 +3037,56 @@ code {
     grid-column: auto;
   }
 }
+.dataset-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+.dataset-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper-2);
+  text-align: left;
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.dataset-item:hover {
+  border-color: var(--terra);
+}
+.dataset-item > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.dataset-item b {
+  font-size: 15px;
+  font-weight: 600;
+}
+.dataset-item small {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.dataset-item em {
+  flex: none;
+  font-style: normal;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.dataset-item.is-on {
+  border-color: var(--terra);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+}
+.dataset-item.is-on em {
+  color: var(--terra-ink);
+  font-weight: 600;
+}
+
 .me-grid {
   display: grid;
   gap: 16px;
