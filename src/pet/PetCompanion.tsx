@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "../lib/router";
-import { store, useStore } from "../store/store";
+import { activeUsername, store, useStore } from "../store/store";
 import { toast } from "../ui/Toast";
-import { DAILY_TARGET, fedToday, petMood } from "./engine";
+import { petMood } from "./engine";
 import { PetSheet } from "./PetSheet";
-import { SpritePet } from "./SpritePet";
 import type { PetAction } from "./sprite";
 import { usePetBehavior } from "./usePetBehavior";
+import { useSpritePetWidget } from "./useSpritePetWidget";
 
-/** 角落小场景里的宠物：自己走动、坐下、趴下、睡觉，点击打开面板。 */
+/** sprite-pet 悬浮层：可拖拽、会自己做动作，点击打开面板。 */
 export function PetCompanion() {
   const pet = useStore((s) => s.pet);
   const { route } = useLocation();
@@ -20,12 +20,19 @@ export function PetCompanion() {
 
   const mood = petMood(pet.satiety);
   const behavior = usePetBehavior(mood);
-  const fed = fedToday(pet);
-  const remaining = Math.max(0, DAILY_TARGET - fed);
-  const bubble = mood === "hungry" ? `我饿了…还差 ${remaining} 个新词` : remaining > 0 ? `再学 ${remaining} 个新词就吃饱啦` : "今天吃得饱饱的！";
+  const action = override ?? behavior.action;
 
-  const play = (action: PetAction, ms: number) => {
-    setOverride(action);
+  useSpritePetWidget({
+    skin: pet.skin,
+    user: activeUsername(),
+    action,
+    facing: behavior.facing,
+    enabled: route.page !== "learn",
+    onOpen: () => setOpen(true),
+  });
+
+  const play = (next: PetAction, ms: number) => {
+    setOverride(next);
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setOverride(null), ms);
   };
@@ -51,32 +58,5 @@ export function PetCompanion() {
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
-  if (route.page === "learn") return null;
-
-  return (
-    <>
-      <div className="pet-scene">
-        <span className="pet-tag">
-          {pet.name} · Lv.{pet.level}
-        </span>
-        <span className="pet-rug" aria-hidden />
-        <span className={`pet-bowl ${fed >= DAILY_TARGET ? "is-full" : ""}`} aria-hidden />
-        <button
-          className={`pet-walker mood-${mood}`}
-          style={{
-            left: `${behavior.x * 100}%`,
-            transition: behavior.action === "walk" ? `left ${behavior.walkMs}ms linear` : "none",
-          }}
-          onClick={() => setOpen(true)}
-          aria-label={`打开宠物面板：${pet.name}，等级 ${pet.level}`}
-        >
-          <span className="pet-bubble" role="status">
-            {bubble}
-          </span>
-          <SpritePet skin={pet.skin} action={override ?? behavior.action} facing={behavior.facing} size={116} />
-        </button>
-      </div>
-      <PetSheet pet={pet} open={open} onClose={() => setOpen(false)} />
-    </>
-  );
+  return <PetSheet pet={pet} open={open} onClose={() => setOpen(false)} />;
 }

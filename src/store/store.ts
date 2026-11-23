@@ -100,6 +100,8 @@ const DEFAULT_DATASET = "word-atlas-open";
 /** 当前登录用户；所有进度与设置都按用户名分命名空间，互不可见。 */
 let activeUser: string | null = null;
 
+export const activeUsername = () => activeUser;
+
 const settingsKey = (user: string | null) => (user ? `word-atlas:u:${user}:settings` : "word-atlas:settings");
 const progressKey = (user: string | null, id: string) => (user ? `word-atlas:u:${user}:v2:${id}` : `word-atlas:v2:${id}`);
 const petKey = (user: string | null) => (user ? `word-atlas:u:${user}:pet` : "word-atlas:pet");
