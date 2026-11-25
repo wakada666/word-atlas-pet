@@ -6,8 +6,8 @@ import { store } from "../store/store";
 import { Sheet } from "../ui/Sheet";
 import { DAILY_TARGET, fedToday, levelInfo, petMood, type PetState } from "./engine";
 import { PET_FORMS } from "./forms";
+import { PetPreview } from "./PetPreview";
 import { PET_SKINS, skinById } from "./skins";
-import { SpritePet } from "./SpritePet";
 import type { PetAction } from "./sprite";
 
 const MOOD_LABEL = { happy: "精神满满", ok: "还不错", hungry: "肚子有点饿了" };
@@ -45,7 +45,7 @@ export function PetSheet({ pet, open, onClose }: { pet: PetState; open: boolean;
       </div>
 
       <div ref={stage} className={`pet-stage ${action === "happy" ? "is-petted" : ""}`}>
-        <SpritePet skin={pet.skin} action={action} size={176} />
+        <PetPreview skin={pet.skin} action={action} size={176} big />
       </div>
 
       <div className="pet-meters">
@@ -71,7 +71,7 @@ export function PetSheet({ pet, open, onClose }: { pet: PetState; open: boolean;
           {PET_SKINS.map((s) => (
             <button key={s.id} className={pet.skin === s.id ? "is-on" : ""} onClick={() => store.petSkin(s.id)} aria-pressed={pet.skin === s.id}>
               <span className="pet-skin-thumb">
-                <SpritePet skin={s.id} action="idle" size={54} playing={false} />
+                <PetPreview skin={s.id} size={54} />
               </span>
               <b>{s.label}</b>
               <small>{s.note}</small>

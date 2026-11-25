@@ -4366,6 +4366,25 @@ a:hover .mark-needle,
   image-rendering: pixelated;
 }
 
+.pet-atlas-preview {
+  display: block;
+  flex: none;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  image-rendering: pixelated;
+}
+.pet-atlas-preview.is-big {
+  animation: atlas-idle 1.33s steps(8) infinite;
+}
+@keyframes atlas-idle {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -1408px 0;
+  }
+}
+
 .sprite-pet-widget {
   filter: drop-shadow(0 8px 14px rgba(60, 42, 20, 0.18));
   user-select: none;
@@ -4416,10 +4435,13 @@ a:hover .mark-needle,
 .pet-stage {
   display: grid;
   place-items: center;
-  height: 186px;
+  height: 200px;
   margin: 2px 0 10px;
 }
 .pet-stage.is-petted .sprite-pet {
+  animation: pet-hop 0.62s var(--ease);
+}
+.pet-stage.is-petted .pet-atlas-preview {
   animation: pet-hop 0.62s var(--ease);
 }
 @keyframes pet-hop {

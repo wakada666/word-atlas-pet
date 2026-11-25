@@ -20,3 +20,6 @@ output/
 .DS_Store
 .playwright-cli/
 *.tsbuildinfo
+
+# 本地自用的第三方宠物图，仅保留在本机，不进入仓库
+public/local-pets/

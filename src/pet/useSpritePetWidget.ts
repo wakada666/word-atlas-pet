@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
 import { loadSpritePet, SpritePetWidget, type SpritePetState } from "sprite-pet";
+import { store } from "../store/store";
+import { DEFAULT_SKIN, manifestSrc, skinById } from "./skins";
 import type { PetAction } from "./sprite";
 
-const BASE = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
 const positionKey = (user: string | null) => `word-atlas:${user ?? "guest"}:petpos:v1`;
 
 function readPosition(user: string | null): { x: number; y: number } | null {
@@ -88,7 +89,7 @@ export function useSpritePetWidget({
 
     void (async () => {
       try {
-        const source = await loadSpritePet(`${BASE}pets/${skin}/pet.json`, { signal: controller.signal });
+        const source = await loadSpritePet(manifestSrc(skin), { signal: controller.signal });
         if (cancelled) return;
 
         widget = new SpritePetWidget({
@@ -143,7 +144,11 @@ export function useSpritePetWidget({
           hint.remove();
         };
       } catch (error) {
-        if (!controller.signal.aborted) console.error("宠物图集加载失败", error);
+        if (!controller.signal.aborted) {
+          console.error("宠物图集加载失败", error);
+          // 本地宠物包不在仓库里，换机器/清理目录后自动回到默认宠物。
+          if (skinById(skin).local) store.petSkin(DEFAULT_SKIN);
+        }
       }
     })();
 
