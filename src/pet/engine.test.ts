@@ -1,46 +1,48 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createPet, DAILY_TARGET, fedToday, feedPet, levelInfo, sanitizePet, tickPet } from "./engine";
+import { createPet, DAILY_TARGET, fedToday, feedPet, levelInfo, sanitizePet, studyPet, tickPet } from "./engine";
 
 const at = (day: number, hour = 12) => new Date(2026, 10, day, hour).getTime();
 
 test("经验换算等级与当前进度", () => {
   assert.deepEqual(levelInfo(0), { level: 1, into: 0, need: 60 });
-  assert.deepEqual(levelInfo(60), { level: 2, into: 0, need: 90 });
-  assert.deepEqual(levelInfo(149), { level: 2, into: 89, need: 90 });
-  assert.deepEqual(levelInfo(150), { level: 3, into: 0, need: 120 });
+  assert.deepEqual(levelInfo(60), { level: 2, into: 0, need: 70 });
+  assert.deepEqual(levelInfo(129), { level: 2, into: 69, need: 70 });
+  assert.deepEqual(levelInfo(130), { level: 3, into: 0, need: 80 });
 });
 
-test("新词喂养：加饱腹、经验与当日计数", () => {
+test("新词喂养：只加饱腹与当日计数，不给经验", () => {
   const pet = createPet(at(22));
   const r = feedPet(pet, "new", at(22, 13));
   assert.equal(r.pet.satiety, 70);
-  assert.equal(r.pet.xp, 12);
+  assert.equal(r.pet.xp, 0);
   assert.equal(r.pet.totalWords, 1);
   assert.equal(fedToday(r.pet, at(22)), 1);
   assert.equal(r.leveled, false);
 });
 
-test("一天喂满 10 个新词会饱腹并升级", () => {
+test("学习 10 个新词累计 120 经验并升到 2 级，但不喂食", () => {
   let pet = createPet(at(22));
-  let leveled = false;
-  for (let i = 0; i < DAILY_TARGET; i++) {
-    const r = feedPet(pet, "new", at(22, 13));
-    pet = r.pet;
-    leveled ||= r.leveled;
-  }
+  for (let i = 0; i < DAILY_TARGET; i++) pet = studyPet(pet, "new", at(22, 13)).pet;
+  assert.equal(pet.xp, 120);
+  assert.equal(pet.level, 2);
+  assert.equal(pet.satiety, 60);
+  assert.equal(fedToday(pet, at(22)), 0);
+});
+
+test("一天测试成功 10 个新词会喂饱", () => {
+  let pet = createPet(at(22));
+  for (let i = 0; i < DAILY_TARGET; i++) pet = feedPet(pet, "new", at(22, 13)).pet;
   assert.equal(pet.satiety, 100);
   assert.equal(fedToday(pet, at(22)), DAILY_TARGET);
   assert.equal(pet.totalWords, DAILY_TARGET);
-  assert.equal(pet.level, 2);
-  assert.ok(leveled);
 });
 
-test("复习只给少量饱腹与经验", () => {
+test("复习：只喂一点饱腹，经验由学习结算", () => {
   const pet = createPet(at(22));
   const r = feedPet(pet, "review", at(22, 13));
   assert.equal(r.pet.satiety, 61);
-  assert.equal(r.pet.xp, 4);
+  assert.equal(r.pet.xp, 0);
   assert.equal(fedToday(r.pet, at(22)), 0);
 });
 

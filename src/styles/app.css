@@ -2401,8 +2401,9 @@ code {
   line-height: 1.2;
 }
 .cloze-zh {
-  color: var(--ink-3);
-  font-size: 14.5px;
+  color: var(--ink-2);
+  font: 400 clamp(17px, 2.2vw, 20px) / 1.7 var(--sans);
+  text-wrap: balance;
 }
 .prompt-listen {
   display: grid;
@@ -4374,9 +4375,22 @@ a:hover .mark-needle,
   image-rendering: pixelated;
 }
 .pet-atlas-preview.is-big {
-  animation: atlas-idle 1.33s steps(8) infinite;
+  /* 本地图集的 idle 行只有 6 帧，第 7、8 格是空白，按 6 帧循环才不会闪空 */
+  animation: atlas-idle 1s steps(6) infinite;
+}
+.pet-atlas-preview.is-big.is-eight {
+  /* 自绘犬类图集 idle 是完整 8 帧 */
+  animation: atlas-idle-eight 1.33s steps(8) infinite;
 }
 @keyframes atlas-idle {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -1056px 0;
+  }
+}
+@keyframes atlas-idle-eight {
   from {
     background-position: 0 0;
   }
@@ -4534,6 +4548,7 @@ a:hover .mark-needle,
   border-color: var(--terra);
 }
 .pet-skin-thumb {
+  position: relative;
   display: grid;
   place-items: center;
   width: 56px;
@@ -4542,8 +4557,31 @@ a:hover .mark-needle,
   overflow: hidden;
   background: var(--card);
 }
-.pet-skin-thumb .sprite-pet {
-  transform: scale(1.2);
+.pet-skin-lock {
+  position: absolute;
+  right: 1px;
+  bottom: 1px;
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--paper-2);
+  color: var(--ink-3);
+  box-sizing: content-box;
+}
+.pet-skin-grid button.is-locked {
+  cursor: default;
+}
+.pet-skin-grid button.is-locked .pet-skin-thumb {
+  opacity: 0.6;
+  filter: grayscale(0.65);
+}
+.pet-skin-grid button.is-locked:hover {
+  border-color: var(--line);
+}
+.pet-skins h3 + .pet-skin-grid {
+  margin-top: 6px;
+}
+.pet-skins .pet-skin-grid + h3 {
+  margin-top: 16px;
 }
 .pet-skin-grid b {
   font-size: 12px;

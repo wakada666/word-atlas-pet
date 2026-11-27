@@ -1,6 +1,6 @@
 {
-    "spritesheetPath":  "spritesheet.png",
-    "description":  "忠犬系伙伴",
-    "displayName":  "秋田",
-    "id":  "akita"
+  "id": "akita",
+  "displayName": "秋田",
+  "description": "忠犬系伙伴",
+  "spritesheetPath": "spritesheet.png"
 }

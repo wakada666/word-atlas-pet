@@ -7,7 +7,7 @@ import { Sheet } from "../ui/Sheet";
 import { DAILY_TARGET, fedToday, levelInfo, petMood, type PetState } from "./engine";
 import { PET_FORMS } from "./forms";
 import { PetPreview } from "./PetPreview";
-import { PET_SKINS, skinById } from "./skins";
+import { BASE_SKINS, SKIN_UNLOCK_STEP, UNLOCK_SKINS, isSkinUnlocked, skinById } from "./skins";
 import type { PetAction } from "./sprite";
 
 const MOOD_LABEL = { happy: "精神满满", ok: "还不错", hungry: "肚子有点饿了" };
@@ -45,7 +45,7 @@ export function PetSheet({ pet, open, onClose }: { pet: PetState; open: boolean;
       </div>
 
       <div ref={stage} className={`pet-stage ${action === "happy" ? "is-petted" : ""}`}>
-        <PetPreview skin={pet.skin} action={action} size={176} big />
+        <PetPreview skin={pet.skin} size={176} big />
       </div>
 
       <div className="pet-meters">
@@ -66,9 +66,9 @@ export function PetSheet({ pet, open, onClose }: { pet: PetState; open: boolean;
       </dl>
 
       <section className="pet-skins">
-        <h3 className="eyebrow">形象</h3>
+        <h3 className="eyebrow">基础形象</h3>
         <div className="pet-skin-grid">
-          {PET_SKINS.map((s) => (
+          {BASE_SKINS.map((s) => (
             <button key={s.id} className={pet.skin === s.id ? "is-on" : ""} onClick={() => store.petSkin(s.id)} aria-pressed={pet.skin === s.id}>
               <span className="pet-skin-thumb">
                 <PetPreview skin={s.id} size={54} />
@@ -78,7 +78,31 @@ export function PetSheet({ pet, open, onClose }: { pet: PetState; open: boolean;
             </button>
           ))}
         </div>
-        <p className="muted">形象只是外观，不影响经验、饱腹和进化。</p>
+
+        <h3 className="eyebrow">等级解锁</h3>
+        <div className="pet-skin-grid">
+          {UNLOCK_SKINS.map((s) => {
+            const unlocked = isSkinUnlocked(s.id, pet.level);
+            return (
+              <button
+                key={s.id}
+                className={`${pet.skin === s.id ? "is-on" : ""} ${unlocked ? "" : "is-locked"}`}
+                onClick={() => store.petSkin(s.id)}
+                disabled={!unlocked}
+                aria-pressed={pet.skin === s.id}
+                aria-label={unlocked ? s.label : `${s.label}，Lv.${s.unlockLevel} 解锁`}
+              >
+                <span className="pet-skin-thumb">
+                  <PetPreview skin={s.id} size={54} />
+                  {unlocked ? null : <Lock className="pet-skin-lock" size={13} />}
+                </span>
+                <b>{s.label}</b>
+                <small>{s.note}</small>
+              </button>
+            );
+          })}
+        </div>
+        <p className="muted">宠物犬与多萝初始可用，可随时更换；其余形象每 {SKIN_UNLOCK_STEP} 级按顺序解锁一个，未解锁前只能在这里预览。</p>
       </section>
 
       <section className="pet-evo">

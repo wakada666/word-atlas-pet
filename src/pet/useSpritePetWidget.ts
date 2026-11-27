@@ -26,6 +26,22 @@ function savePosition(user: string | null, pos: { x: number; y: number }) {
   }
 }
 
+/**
+ * 本地图集每行的真实帧数：这些包并不是每行都有 8 帧，
+ * 末尾是空白格。按默认 8 帧播放会闪出空白，所以显式声明帧数。
+ */
+const ATLAS_ANIMATIONS = {
+  idle: { frameCount: 6 },
+  "move-right": { frameCount: 8 },
+  "move-left": { frameCount: 8 },
+  wave: { frameCount: 4 },
+  jump: { frameCount: 5 },
+  failure: { frameCount: 8, loop: false },
+  waiting: { frameCount: 6 },
+  working: { frameCount: 6 },
+  reviewing: { frameCount: 6 },
+} as const;
+
 function toState(action: PetAction, facing: 1 | -1): SpritePetState {
   switch (action) {
     case "walk":
@@ -95,7 +111,7 @@ export function useSpritePetWidget({
         widget = new SpritePetWidget({
           source,
           width,
-          animations: { failure: { loop: false } },
+          animations: skinById(skin).kind === "atlas" ? ATLAS_ANIMATIONS : { failure: { loop: false } },
           floating: {
             draggable: true,
             resizable: false,

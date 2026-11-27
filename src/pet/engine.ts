@@ -1,5 +1,5 @@
 import { dayKey } from "../lib/day";
-import { DEFAULT_SKIN, isSkin } from "./skins";
+import { DEFAULT_SKIN, isSkin, isSkinUnlocked } from "./skins";
 
 /** 每天 10 个新词就把宠物喂饱。 */
 export const DAILY_TARGET = 10;
@@ -36,7 +36,7 @@ export interface PetState {
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 
 export function xpNeeded(level: number) {
-  return 60 + (level - 1) * 30;
+  return 60 + (level - 1) * 10;
 }
 
 /** 由累计经验换算等级与当前等级进度。 */
@@ -109,26 +109,30 @@ export interface FeedResult {
   gainedXp: number;
 }
 
-/** 学完一个词后喂养：新词加饱腹与经验，复习只给少量。 */
-export function feedPet(pet: PetState, kind: FeedKind, now = Date.now()): FeedResult {
+/** 学习/复习：只累计经验，不算喂食。 */
+export function studyPet(pet: PetState, kind: FeedKind, now = Date.now()): FeedResult {
   const base = tickPet(pet, now);
-  const today = dayKey(new Date(now));
   const gainedXp = kind === "new" ? NEW_XP : REVIEW_XP;
   const xp = base.xp + gainedXp;
   const { level } = levelInfo(xp);
+  return { pet: { ...base, xp, level }, leveled: level > base.level, gainedXp };
+}
+
+/** 测试通过才真正喂食：加饱腹并计入累计喂养。 */
+export function feedPet(pet: PetState, kind: FeedKind, now = Date.now()): FeedResult {
+  const base = tickPet(pet, now);
+  const today = dayKey(new Date(now));
   const fed = kind === "new" ? { ...base.fed, [today]: (base.fed[today] ?? 0) + 1 } : base.fed;
   return {
     pet: {
       ...base,
-      xp,
-      level,
       satiety: clamp(base.satiety + (kind === "new" ? NEW_SATIETY : REVIEW_SATIETY), 0, MAX_SATIETY),
       fed,
       totalWords: base.totalWords + 1,
       lastFed: now,
     },
-    leveled: level > base.level,
-    gainedXp,
+    leveled: false,
+    gainedXp: 0,
   };
 }
 
@@ -142,6 +146,7 @@ export function sanitizePet(v: unknown, now = Date.now()): PetState {
   const base = createPet(now);
   if (!isObj(v) || v.version !== 1) return tickPet(base, now);
   const xp = num(v.xp, 0, 100_000_000) ? Math.floor(v.xp) : 0;
+  const level = levelInfo(xp).level;
   const fed: Record<string, number> = {};
   if (isObj(v.fed))
     for (const [k, n] of Object.entries(v.fed))
@@ -151,13 +156,13 @@ export function sanitizePet(v: unknown, now = Date.now()): PetState {
     name: typeof v.name === "string" && v.name.trim() ? v.name.slice(0, 12) : base.name,
     born: num(v.born, 0) ? v.born : base.born,
     xp,
-    level: levelInfo(xp).level,
+    level,
     satiety: num(v.satiety, 0, MAX_SATIETY) ? v.satiety : base.satiety,
     fed,
     lastTick: typeof v.lastTick === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v.lastTick) ? v.lastTick : base.lastTick,
     totalWords: num(v.totalWords, 0) ? Math.floor(v.totalWords) : 0,
     form: typeof v.form === "string" ? v.form : "puppy",
-    skin: typeof v.skin === "string" && isSkin(v.skin) ? v.skin : DEFAULT_SKIN,
+    skin: typeof v.skin === "string" && isSkin(v.skin) && isSkinUnlocked(v.skin, level) ? v.skin : DEFAULT_SKIN,
     lastFed: num(v.lastFed, 0) ? v.lastFed : 0,
   };
   return tickPet(pet, now);

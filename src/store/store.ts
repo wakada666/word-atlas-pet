@@ -2,20 +2,26 @@ import { useSyncExternalStore } from "react";
 import type { DatasetKey } from "../atlas/datasets";
 import type { Accent } from "../atlas/types";
 import { dayKey } from "../lib/day";
-import { createPet, feedPet, sanitizePet, tickPet, type FeedKind, type PetState } from "../pet/engine";
-import { isSkin } from "../pet/skins";
+import { createPet, feedPet, sanitizePet, studyPet, tickPet, type FeedKind, type PetState } from "../pet/engine";
+import { isSkin, isSkinUnlocked } from "../pet/skins";
 import type { CardState, Grade } from "./srs";
 
 export type QuizKind = "meaning" | "picture" | "listen" | "spell";
-export type Step = { id: string; kind: "intro" } | { id: string; kind: QuizKind; retry?: boolean; options?: string[] };
+export type Step = { id: string; kind: "intro" } | { id: string; kind: QuizKind; retry?: boolean; options?: string[]; test?: boolean };
+
+/** 会话结构版本：旧版本的步骤可能没有测试环节，直接作废重开。 */
+export const SESSION_VERSION = 3;
 
 export interface ActiveSession {
+  v: number;
   id: string;
   started: number;
   steps: Step[];
   index: number;
   /** First-attempt grade per word; retries never change it. */
   graded: Record<string, Grade>;
+  /** 测试步骤的首答结果，只有通过测试才喂食。 */
+  tested?: Record<string, boolean>;
   newIds: string[];
   reviewIds: string[];
   /** Answer shown but not yet continued; survives reload without double counting. */
@@ -164,7 +170,7 @@ export function sanitizeProgress(v: unknown, datasetId: string): Progress {
       )
       .slice(-500);
   const s = v.session;
-  if (isObj(s) && typeof s.id === "string" && Array.isArray(s.steps) && num(s.index, 0) && isObj(s.graded))
+  if (isObj(s) && s.v === SESSION_VERSION && typeof s.id === "string" && Array.isArray(s.steps) && num(s.index, 0) && isObj(s.graded))
     out.session = s as unknown as ActiveSession;
   return out;
 }
@@ -295,8 +301,16 @@ export const store = {
     emit();
     scheduleSave();
   },
-  /** 学完一个词后喂宠物；返回是否升级，供界面提示。 */
-  petWord(kind: FeedKind) {
+  /** 学习或复习完一个词：只累计经验；返回是否升级，供界面提示。 */
+  petStudy(kind: FeedKind) {
+    const res = studyPet(state.pet, kind);
+    state = { ...state, pet: res.pet };
+    emit();
+    scheduleSave();
+    return res;
+  },
+  /** 测试通过：真正喂食。 */
+  petFeed(kind: FeedKind) {
     const res = feedPet(state.pet, kind);
     state = { ...state, pet: res.pet };
     emit();
@@ -311,12 +325,14 @@ export const store = {
     emit();
     scheduleSave();
   },
-  /** 切换宠物外观，只改形象。 */
+  /** 切换宠物外观，只改形象；未解锁的形象不可替换。 */
   petSkin(skin: string) {
-    if (!isSkin(skin) || skin === state.pet.skin) return;
+    if (!isSkin(skin) || skin === state.pet.skin) return false;
+    if (!isSkinUnlocked(skin, state.pet.level)) return false;
     state = { ...state, pet: { ...state.pet, skin } };
     emit();
     scheduleSave();
+    return true;
   },
 };
 

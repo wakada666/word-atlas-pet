@@ -1,6 +1,6 @@
 {
-    "spritesheetPath":  "spritesheet.png",
-    "description":  "蓝眼睛拆家王",
-    "displayName":  "哈士奇",
-    "id":  "husky"
+  "id": "husky",
+  "displayName": "哈士奇",
+  "description": "蓝眼睛拆家王",
+  "spritesheetPath": "spritesheet.png"
 }

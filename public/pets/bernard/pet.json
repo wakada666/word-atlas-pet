@@ -1,6 +1,6 @@
 {
-    "spritesheetPath":  "spritesheet.png",
-    "description":  "毛茸茸的靠山",
-    "displayName":  "圣伯纳",
-    "id":  "bernard"
+  "id": "bernard",
+  "displayName": "圣伯纳",
+  "description": "毛茸茸的靠山",
+  "spritesheetPath": "spritesheet.png"
 }

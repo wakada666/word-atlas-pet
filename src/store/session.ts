@@ -2,7 +2,7 @@ import type { Atlas, WordRef } from "../atlas/types";
 import { MEDIA } from "../atlas/types";
 import { hashSeed, normalize, shuffle } from "../lib/text";
 import { isMastered, review, Rating, type Grade } from "./srs";
-import { bumpDay, dayKey, store, type ActiveSession, type Progress, type QuizKind, type Settings, type Step } from "./store";
+import { bumpDay, dayKey, store, SESSION_VERSION, type ActiveSession, type Progress, type QuizKind, type Settings, type Step } from "./store";
 
 export function dueIds(p: Progress, now = Date.now()) {
   return Object.entries(p.cards)
@@ -89,20 +89,21 @@ export function buildSession(atlas: Atlas, p: Progress, s: Settings, opts?: { id
   const reviewIds = opts?.ids ? opts.ids.filter((id) => p.cards[id]) : plan.due.slice(0, 120);
   const newIds = opts?.ids ? opts.ids.filter((id) => !p.cards[id]) : opts?.reviewOnly ? [] : plan.fresh;
   const steps: Step[] = [];
-  const quiz = (id: string, salt: number): Step => {
+  const quiz = (id: string, salt: number): Extract<Step, { kind: QuizKind }> => {
     const ref = atlas.byId.get(id)!;
     const kind = quizKind(ref, p, s, seed + salt);
     return { id, kind, options: kind === "spell" ? undefined : distractors(atlas, ref, kind, seed + salt) };
   };
   // Reviews first while attention is fresh, then new words in small groups:
-  // meet five, then recall those five in a different order.
-  reviewIds.forEach((id, i) => steps.push(quiz(id, i)));
+  // meet five, recall those five in a different order, and finish with a spelling test.
+  reviewIds.forEach((id, i) => steps.push({ ...quiz(id, i), test: true }));
   for (let g = 0; g < newIds.length; g += 5) {
     const group = newIds.slice(g, g + 5);
     group.forEach((id) => steps.push({ id, kind: "intro" }));
     shuffle(group, seed + g).forEach((id, i) => steps.push(quiz(id, 1000 + g + i)));
+    shuffle(group, seed + g + 99).forEach((id) => steps.push({ id, kind: "spell", test: true }));
   }
-  return { id: `s${seed}`, started: seed, steps, index: 0, graded: {}, newIds, reviewIds };
+  return { v: SESSION_VERSION, id: `s${seed}`, started: seed, steps, index: 0, graded: {}, newIds, reviewIds };
 }
 
 export function gradeFor(kind: QuizKind, correct: boolean, ms: number, hinted: boolean): Grade {
@@ -121,12 +122,20 @@ export function answer(atlas: Atlas, step: Step & { kind: QuizKind }, correct: b
   const active = progress.session;
   if (!active) return;
   const first = !(step.id in active.graded) && !step.retry;
-  // 新词喂一口，复习只给少量经验；重复作答不再喂食。
-  if (first) store.petWord(active.newIds.includes(step.id) ? "new" : "review");
+  // 学习/复习只累计经验；测试（拼写/复习测验）首答通过才真正喂食。
+  const isTest = !step.retry && step.test === true;
+  const fedBefore = active.tested ?? {};
+  const shouldFeed = isTest && correct && !(step.id in fedBefore);
+  const feedKind = active.newIds.includes(step.id) ? "new" : "review";
+  if (first) store.petStudy(feedKind);
+  if (shouldFeed) store.petFeed(feedKind);
   store.progress((p) => {
     const sess = p.session;
     if (!sess) return p;
     let next: Progress = { ...p, session: { ...sess, pending: { correct, value } } };
+    if (isTest) {
+      next = { ...next, session: { ...next.session!, tested: { ...fedBefore, [step.id]: correct } } };
+    }
     if (first) {
       next = {
         ...next,
